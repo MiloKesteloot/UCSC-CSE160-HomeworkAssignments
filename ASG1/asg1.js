@@ -70,7 +70,7 @@ function setUpElements() {
     document.getElementById('green').addEventListener('mouseup', function() { g_selectedColor[1] = this.value/255});
     document.getElementById('blue').addEventListener('mouseup', function() { g_selectedColor[2] = this.value/255});
     document.getElementById('segment-count').addEventListener('mouseup', function() { g_segmentCount = this.value});
-
+    document.getElementById('shape-size').addEventListener('mouseup', function() { g_selectedSize = this.value});
 }
 
 function main() {
@@ -254,7 +254,7 @@ function getDraggedArt(event, bool) {
     let size = (new Vector3([x, y, 0])).sub(clickCenter).magnitude();
 
     if (bool) {
-        if (size < 0.003) size = 0.1;
+        if (size < 0.003) size = g_selectedSize/200;
     }
 
     let sides = g_segmentCount;
