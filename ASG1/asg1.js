@@ -71,6 +71,7 @@ function setUpElements() {
     document.getElementById('blue').addEventListener('mouseup', function() { g_selectedColor[2] = this.value/255});
     document.getElementById('segment-count').addEventListener('mouseup', function() { g_segmentCount = this.value});
     document.getElementById('shape-size').addEventListener('mouseup', function() { g_selectedSize = this.value});
+    document.getElementById('drag-mode').addEventListener('mouseup', function() { g_dragMode = this.value});
 }
 
 function main() {
@@ -231,6 +232,7 @@ let g_selectedColor = [1, 1, 1, 1];
 let g_selectedSize = 20;
 let g_segmentCount = 8
 let g_mode = "circle";
+let g_dragMode = "paint"
 
 function drawSquares() {
     g_mode = "square";
@@ -306,25 +308,47 @@ function click(event) {
     clicking = true;
     let [x, y] = convertToGL(event.clientX, event.clientY, event.target.getBoundingClientRect());
     clickCenter = new Vector3([x, y, 0]);
+    if (g_dragMode === "scale") {
+
+    } else {
+        getDraggedArt(event, true);
+        for (let dt of demoTris) {
+            g_points.push(dt);
+        }
+        demoTris = [];
+        drawShapes();
+    }
 }
 
 function upClick(event) {
     clicking = false;
-    getDraggedArt(event, true);
-    for (let dt of demoTris) {
-        g_points.push(dt);
+    if (g_dragMode === "scale") {
+        getDraggedArt(event, true);
+        for (let dt of demoTris) {
+            g_points.push(dt);
+        }
+        demoTris = [];
+        drawShapes();
     }
-    demoTris = [];
-    drawShapes();
 }
 
 function move(event) {
-    if (clicking) getDraggedArt(event, false)
-
+    if (g_dragMode === "scale") {
+        if (clicking) getDraggedArt(event, false)
+    } else {
+        if (clicking) {
+            let [x, y] = convertToGL(event.clientX, event.clientY, event.target.getBoundingClientRect());
+            clickCenter = new Vector3([x, y, 0]);
+            getDraggedArt(event, true);
+            for (let dt of demoTris) {
+                g_points.push(dt);
+            }
+            demoTris = [];
+            drawShapes();
+        }
+    }
 }
 
 function paint(x, y) {
-
-
     drawShapes();
 }

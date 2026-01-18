@@ -23,9 +23,13 @@
     <label for="blue">Blue</label><input id="blue" type="range" min="0" max="255" value="255" step="1">
     <br>
     <label for="segment-count">(Circles) Segment Count:</label><input id="segment-count" type="range" min="3" max="20" value="8" step="1">
-    <label for="shape-size">Shape Size:</label><input id="shape-size" type="range" min="1" max="100" value="20" step="1">
-    <div><span style="color: red; font-weight: bolder;">Custom Element: </span>To set the <b>size</b> and <b>rotation</b> of a drawn object, <b>click and drag</b>!</div>
-    <br>
+    <label for="shape-size">Shape Size:</label><input id="shape-size" type="range" min="1" max="100" value="20" step="1"><br><br>
+    <div><span style="color: red; font-weight: bolder;">Custom Element: Scale Drag Mode!</span> To set the <b>size</b> and <b>rotation</b> of a drawn object, switch to Scale Drag Mode then <b>click and drag</b>!</div>
+    <label for="drag-mode">Drag Mode: </label>
+    <select id="drag-mode">
+        <option value="paint">Paint</option>
+        <option value="scale">Scale</option>
+    </select><br><br>
     <input type="button" value="Draw Artwork" onclick="drawArtwork()">
 
     <script src="lib/cuon-utils.js"></script>
