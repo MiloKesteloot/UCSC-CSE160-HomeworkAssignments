@@ -105,6 +105,16 @@ class Vector3 {
         return this;
     };
 
+    rot(angle) {
+        let x1 = this.elements[0];
+        let y1 = this.elements[1];
+        let t = Math.atan2(y1, x1);
+        let h = Math.sqrt(x1**2 + y1**2);
+        this.elements[0] = Math.cos(t + angle) * h;
+        this.elements[1] = Math.sin(t + angle) * h;
+        return this;
+    }
+
     /**
       * Calcualte the dop product between this vector and other.
       * @return scalar

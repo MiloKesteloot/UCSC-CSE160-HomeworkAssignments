@@ -1,16 +1,5 @@
 let ctx;
 
-// function main() {
-//
-//     let canvas = document.getElementById('example');
-//     if (!canvas) {
-//         console.log('Failed to retrieve the <canvas> element');
-//         return false;
-//     }
-//
-//     ctx = canvas.getContext('2d');
-// }
-
 // ColoredPoint.js (c) 2012 matsuda
 // Vertex shader program
 let VSHADER_SOURCE = `
@@ -80,7 +69,8 @@ function setUpElements() {
     document.getElementById('red').addEventListener('mouseup', function() { g_selectedColor[0] = this.value/255});
     document.getElementById('green').addEventListener('mouseup', function() { g_selectedColor[1] = this.value/255});
     document.getElementById('blue').addEventListener('mouseup', function() { g_selectedColor[2] = this.value/255});
-    document.getElementById('shape-size').addEventListener('mouseup', function() { g_selectedSize = this.value});
+    document.getElementById('segment-count').addEventListener('mouseup', function() { g_segmentCount = this.value});
+
 }
 
 function main() {
@@ -101,6 +91,8 @@ function main() {
 
     // Clear <canvas>
     gl.clear(gl.COLOR_BUFFER_BIT);
+
+    drawArtwork();
 }
 
 function convertToGL(x, y, rect) {
@@ -115,13 +107,58 @@ function clearCanvas() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 }
 
+function drawArtwork() {
+    col = [210/355, 180/355, 140/355, 1];
+    addTri(0, 0, 2, 0, 3, 3);
+    addTri(2, 0, 3, 1, 3, 3);
+    addTri(3, 3, 5, 3, 5, 1);
+    addTri(3, 1, 3, 3, 5, 1);
+    col = [0.03, 0.8, 0.1, 1];
+    addTri(3.5, 0, 4.5, 0, 4.5, 1);
+    addTri(3.5, 0, 4.5, 1, 3.5, 1);
+    addTri(3.5, 1, 4, 1, 4, 2.5);
+    addTri(3.5, 1, 3.5, 2.5, 4, 2.5);
+    addTri(3.5, 3, 3.5, 6, 4.5, 6);
+    addTri(3.5, 3, 4.5, 3, 4.5, 6);
+    col = [0.9, 0.1, 0.2, 1];
+    addTri(1, 8, 2, 9, 3, 8);
+    addTri(3, 8, 4, 9, 5, 8);
+    addTri(5, 8, 6, 9, 7, 8);
+    addTri(1, 8, 3, 8, 3, 6);
+    addTri(3, 8, 7, 8, 5, 6);
+    addTri(3, 8, 5, 6, 3, 6);
+}
+
+let col = [0, 0, 0, 1];
+
+function l(v) {
+    v/=5;
+    v-=1;
+    return v;
+}
+
+function addTri(x1, y1, x2, y2, x3, y3) {
+    x1 = l(x1);
+    y1 = l(y1);
+    x2 = l(x2);
+    y2 = l(y2);
+    x3 = l(x3);
+    y3 = l(y3);
+    g_points.push(new Triangle([x1, y1, x2, y2, x3, y3], col));
+    drawShapes();
+}
+
 function drawShapes() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     let len = g_points.length;
     for(let i = 0; i < len; i++) {
         let p = g_points[i];
+        p.render();
+    }
 
+    for(let i = 0; i < demoTris.length; i++) {
+        let p = demoTris[i];
         p.render();
     }
 }
@@ -146,6 +183,41 @@ class Point {
     }
 }
 
+class Triangle {
+    constructor(corners, rgb) {
+        this.type = "triangle";
+        this.corners = [...corners];
+        this.color = [...rgb, 1];
+    }
+
+    render() {
+        var n = this.corners.length/2; // The number of vertices
+
+        // Create a buffer object
+        var vertexBuffer = gl.createBuffer();
+        if (!vertexBuffer) {
+            console.log('Failed to create the buffer object');
+            return -1;
+        }
+
+        // Bind the buffer object to target
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        // Write date into the buffer object
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.corners), gl.STATIC_DRAW);
+
+        // Assign the buffer object to a_Position variable
+        gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+
+        // Enable the assignment to a_Position variable
+        gl.enableVertexAttribArray(a_Position);
+
+        // Pass the color of a point to u_FragColor variable
+        gl.uniform4f(u_FragColor, ...this.color);
+
+        gl.drawArrays(gl.TRIANGLES, 0, n);
+    }
+}
+
 function sendTextToHTML(text, ID) {
     let htmlElm = document.getElementById(ID);
     htmlElm.innerHTML = text;
@@ -153,28 +225,90 @@ function sendTextToHTML(text, ID) {
 
 let g_points = [];
 let g_selectedColor = [1, 1, 1, 1];
-let g_selectedSize = 5;
+let g_selectedSize = 20;
+let g_segmentCount = 8
+let g_mode = "circle";
+
+function drawSquares() {
+    g_mode = "square";
+}
+
+function drawCircles() {
+    g_mode = "circle";
+}
+
+function drawTriangles() {
+    g_mode = "triangle";
+}
 
 let clicking = false;
+let clickCenter = null;
+
+let demoTris = [];
+
+function getDraggedArt(event) {
+    let [x, y] = convertToGL(event.clientX, event.clientY, event.target.getBoundingClientRect());
+    let size = (new Vector3([x, y, 0])).sub(clickCenter).magnitude();
+
+    let sides = g_segmentCount;
+
+    let edge = new Vector3([0, 1, 0]);
+
+    if (g_mode === "square") {
+        sides = "4";
+    }
+
+    if (g_mode === "triangle") {
+        sides = 3;
+    }
+
+    if (sides === "4") {
+        edge.rot(3.1415/4);
+    }
+
+    if (sides === "20") {
+        sides = 100;
+    }
+
+    edge.mul(size);
+
+    x = clickCenter.elements[0];
+    y = clickCenter.elements[1];
+
+    demoTris = [];
+
+    for (let i = 0; i < sides; i++) {
+        let lastEdge = new Vector3([edge.elements[0], edge.elements[1], 0]);
+        edge.rot(3.1415*2/sides);
+        let point = new Triangle([edge.elements[0]+x, edge.elements[1]+y, 0+x, 0+y, lastEdge.elements[0]+x, lastEdge.elements[1]+y], g_selectedColor, g_selectedSize);
+        demoTris.push(point);
+    }
+
+    drawShapes();
+}
 
 function click(event) {
     clicking = true;
-    paint(event);
+    let [x, y] = convertToGL(event.clientX, event.clientY, event.target.getBoundingClientRect());
+    clickCenter = new Vector3([x, y, 0]);
 }
 
 function upClick(event) {
     clicking = false;
+    for (let dt of demoTris) {
+        g_points.push(dt);
+    }
+    demoTris = [];
+    drawShapes();
 }
 
 function move(event) {
-    if (clicking) paint(event);
+    if (clicking) getDraggedArt(event)
+
 }
 
-function paint(event) {
-    let [x, y] = convertToGL(event.clientX, event.clientY, event.target.getBoundingClientRect());
+function paint(x, y) {
 
-    let point = new Point([x, y], g_selectedColor, g_selectedSize);
-    g_points.push(point);
 
     drawShapes();
 }
