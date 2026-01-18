@@ -257,9 +257,17 @@ function getDraggedArt(event, bool) {
         if (size < 0.003) size = g_selectedSize/200;
     }
 
+    let t = 0;
+
+    if (size >= 0.003) {
+        let v = (new Vector3([x, y, 0])).sub(clickCenter);
+        t = Math.atan2(v.elements[0], v.elements[1]);
+    }
+
     let sides = g_segmentCount;
 
     let edge = new Vector3([0, 1, 0]);
+    edge.rot(-t);
 
     if (g_mode === "square") {
         sides = "4";
