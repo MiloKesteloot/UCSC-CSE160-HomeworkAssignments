@@ -249,9 +249,13 @@ let clickCenter = null;
 
 let demoTris = [];
 
-function getDraggedArt(event) {
+function getDraggedArt(event, bool) {
     let [x, y] = convertToGL(event.clientX, event.clientY, event.target.getBoundingClientRect());
     let size = (new Vector3([x, y, 0])).sub(clickCenter).magnitude();
+
+    if (bool) {
+        if (size < 0.003) size = 0.1;
+    }
 
     let sides = g_segmentCount;
 
@@ -298,6 +302,7 @@ function click(event) {
 
 function upClick(event) {
     clicking = false;
+    getDraggedArt(event, true);
     for (let dt of demoTris) {
         g_points.push(dt);
     }
@@ -306,7 +311,7 @@ function upClick(event) {
 }
 
 function move(event) {
-    if (clicking) getDraggedArt(event)
+    if (clicking) getDraggedArt(event, false)
 
 }
 
