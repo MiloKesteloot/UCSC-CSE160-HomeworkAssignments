@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Ender Dragon</title>
+    <link rel="icon" type="image/png" href="./icon.png">
+    <link rel="stylesheet" href="style.css">
+  </head>
+
+  <body onload="main()">
+    <canvas id="webgl" width="1000" height="1000">
+      Please use a browser that supports "canvas"
+    </canvas>
+
+    <div class="sidebar">
+
+      <b style="font-size: 30px;">Ender Dragon</b>
+
+      <p id="fps">FPS: ???</p>
+
+      <input type="button" value="Pause Animation" onclick="pauseButtonClicked()" id="pauseButton"><br>
+      <input type="button" value="Toggle Particles" onclick="toggleParticles()" id="toggleParticles">
+
+      <p>
+        <b>Background Color:</b><br>
+        <input type="color" id="colorPicker" value="#1a0024">
+      </p>
+
+      <p>
+        <b>Camera Angle:</b><br>
+        Yaw <input type="range" min="-180" max="180" value="0" class="slider" id="yawSlide"><br>
+        Pitch <input type="range" min="-180" max="180" value="0" class="slider" id="pitchSlide">
+      </p>
+
+      <p>
+        <b>Neck:</b><br>
+        Left/Right <input type="range" min="-20" max="20" value="0" class="slider" id="neckYawAngleSlide"><br>
+        Down/Up <input type="range" min="-20" max="20" value="0" class="slider" id="neckPitchAngleSlide">
+      </p>
+      <p>
+        <b>Front Legs:</b><br>
+        Forearm <input type="range" min="-45" max="45" value="0" class="slider" id="forearmAngleSlide"><br>
+        Wrist <input type="range" min="-45" max="45" value="0" class="slider" id="wristAngleSlide"><br>
+        Foot <input type="range" min="-45" max="45" value="0" class="slider" id="footAngleSlide">
+      </p>
+      <p>
+        <b>Back Legs:</b><br>
+        Thigh <input type="range" min="-45" max="45" value="0" class="slider" id="thighAngleSlide"><br>
+        Calf <input type="range" min="-45" max="45" value="0" class="slider" id="calfAngleSlide"><br>
+        Foot <input type="range" min="-45" max="45" value="0" class="slider" id="backFootAngleSlide">
+      </p>
+    </div>
+
+    <script src="lib/cuon-utils.js"></script>
+    <script src="lib/webgl-utils.js"></script>
+    <script src="lib/webgl-debug.js"></script>
+    <script src="lib/cuon-matrix-cse160.js"></script>
+    <script src="Shapes.js"></script>
+    <script src="BlockyAnimal.js"></script>
+  </body>
+</html>
