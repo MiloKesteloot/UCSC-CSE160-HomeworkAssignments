@@ -11,8 +11,13 @@ class Shape {
 
         this.position = [x, y, z];
         this.scale = [sx, sy, sz];
-        this.pivot = [px, py, pz];
-        this.rotation = [r, ax, ay, az];
+        if (px) {
+            this.pivot = [px, py, pz];
+            this.rotation = [r, ax, ay, az];
+        } else {
+            this.pivot = undefined;
+            this.rotation = undefined;
+        }
 
         this.uvCoords = {};
 
@@ -24,22 +29,19 @@ class Shape {
     buildMatrix() {
         this.matrix.setIdentity();
 
-        if (this.pivot[0] !== undefined) {
+        if (this.pivot !== undefined && this.pivot[0] !== undefined) {
 
-            // 1. move to pivot
             this.matrix.translate(this.pivot[0], this.pivot[1], this.pivot[2]);
 
-            // 2. rotate around pivot
             this.matrix.rotate(eval(this.rotation[0]), this.rotation[1], this.rotation[2], this.rotation[3]);
 
-            // 3. move back from pivot
             this.matrix.translate(-this.pivot[0], -this.pivot[1], -this.pivot[2]);
         }
 
         this.matrix.translate(this.position[0], this.position[1], this.position[2]);
 
         if (this.faceCamera) {
-            const cameraMat = new Matrix4().rotate(g_globalPitchAngle, 1, 0, 0).rotate(g_globalYawAngle, 0, 1, 0);
+            const cameraMat = new Matrix4().rotate(player.rot.pitch, 1, 0, 0).rotate(player.rot.yaw, 0, 1, 0);
             cameraMat.setInverseOf(cameraMat);
             this.matrix.multiply(cameraMat);
             this.matrix.rotate(90, 1, 0, 0);
@@ -74,7 +76,7 @@ class Shape {
         child.position[0] -= parentPos[0];
         child.position[1] -= parentPos[1];
         child.position[2] -= parentPos[2];
-        if (child.pivot[0] !== undefined) {
+        if (child.pivot !== undefined && child.pivot[0] !== undefined) {
             child.pivot[0] -= parentPos[0];
             child.pivot[1] -= parentPos[1];
             child.pivot[2] -= parentPos[2];
@@ -264,7 +266,7 @@ class Triangle3D {
             console.error('Failed to create the UV buffer object');
             return false;
         }
-        
+
         return true;
     }
 
@@ -287,13 +289,13 @@ class Triangle3D {
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, texture);
             gl.uniform1i(u_Sampler, 0);
-            
+
             // Bind and set UV data
             gl.bindBuffer(gl.ARRAY_BUFFER, Triangle3D.uvBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvCoords), gl.DYNAMIC_DRAW);
-            gl.vertexAttribPointer(a_TexCoord, 2, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(a_TexCoord);
-            
+            gl.vertexAttribPointer(a_UV, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(a_UV);
+
             // Tell shader to use texture
             gl.uniform1i(u_UseTexture, 1);
         } else {

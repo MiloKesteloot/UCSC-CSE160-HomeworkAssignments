@@ -17,6 +17,15 @@ class Vector3 {
         this.elements = v;
     }
 
+    get x() { return this.elements[0]; }
+    set x(x) { this.elements[0] = x; }
+
+    get y() { return this.elements[1]; }
+    set y(y) { this.elements[1] = y; }
+
+    get z() { return this.elements[2]; }
+    set z(z) { this.elements[2] = z; }
+
     /**
      * Copy vector.
      * @param src source vector
@@ -106,12 +115,36 @@ class Vector3 {
     };
 
     rot(angle) {
+        return this.rotZ(angle);
+    }
+
+    rotZ(angle) {
         let x1 = this.elements[0];
         let y1 = this.elements[1];
         let t = Math.atan2(y1, x1);
         let h = Math.sqrt(x1**2 + y1**2);
         this.elements[0] = Math.cos(t + angle) * h;
         this.elements[1] = Math.sin(t + angle) * h;
+        return this;
+    }
+
+    rotY(angle) {
+        let x1 = this.elements[0];
+        let y1 = this.elements[2];
+        let t = Math.atan2(y1, x1);
+        let h = Math.sqrt(x1**2 + y1**2);
+        this.elements[0] = Math.cos(t + angle) * h;
+        this.elements[2] = Math.sin(t + angle) * h;
+        return this;
+    }
+
+    rotX(angle) {
+        let x1 = this.elements[1];
+        let y1 = this.elements[2];
+        let t = Math.atan2(y1, x1);
+        let h = Math.sqrt(x1**2 + y1**2);
+        this.elements[1] = Math.cos(t + angle) * h;
+        this.elements[2] = Math.sin(t + angle) * h;
         return this;
     }
 
