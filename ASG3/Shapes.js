@@ -23,7 +23,25 @@ class Shape {
 
         this.transparent = false;
 
+        this.texture = null;
+
         this.buildMatrix();
+    }
+
+    getTexture() {
+        if (this.texture !== null) {
+            return this.texture;
+        }
+
+        if (this.parent === null) {
+            console.error('Furthest parent had no texture!');
+        }
+
+        return this.parent.getTexture();
+    }
+
+    setTexture(name) {
+        this.texture = name;
     }
 
     buildMatrix() {
@@ -130,6 +148,8 @@ class Shape {
     applyTexture(faces, uv, rotations) {
         // [x1, y1, x2, y2]
 
+        let image = textures[this.getTexture()].image;
+
         let x1 = uv[0]/image.width;
         let y1 = uv[1]/image.height;
         let x2 = (uv[0]+uv[2])/image.width;
@@ -184,10 +204,10 @@ class Shape {
 
 class Cube extends Shape {
     subRender(worldMatrix) {
-        Cube.drawCube(worldMatrix, this.color, this.uvCoords);
+        Cube.drawCube(worldMatrix, this.color, this.getTexture(), this.uvCoords);
     }
 
-    static drawCube(matrix, rgba, uv) {
+    static drawCube(matrix, rgba, t, uv) {
         const col1 = rgba;
         const col2 = this.multColor(rgba, 0.85);
         const col3 = this.multColor(rgba, 0.7);
@@ -196,20 +216,20 @@ class Cube extends Shape {
         const col6 = this.multColor(rgba, 0.35);
 
         // Top
-        Cube.drawFace(col1, uv.top, matrix, []);
+        Cube.drawFace(col1, uv.top, matrix, t, []);
         // Bottom
-        Cube.drawFace(col2, uv.bottom, matrix, [[180, 0, 0, 1], [180, 0, 1, 0]]);
+        Cube.drawFace(col2, uv.bottom, matrix, t, [[180, 0, 0, 1], [180, 0, 1, 0]]);
         // Front
-        Cube.drawFace(col3, uv.front, matrix, [[90, 0, 0, 1]]);
+        Cube.drawFace(col3, uv.front, matrix, t, [[90, 0, 0, 1]]);
         // Back
-        Cube.drawFace(col4, uv.back, matrix, [[-90, 0, 0, 1], [180, 0, 1, 0]]);
+        Cube.drawFace(col4, uv.back, matrix, t, [[-90, 0, 0, 1], [180, 0, 1, 0]]);
         // Right
-        Cube.drawFace(col5, uv.right, matrix, [[90, 1, 0, 0]]);
+        Cube.drawFace(col5, uv.right, matrix, t, [[90, 1, 0, 0]]);
         // Left
-        Cube.drawFace(col6, uv.left, matrix, [[-90, 1, 0, 0]]);
+        Cube.drawFace(col6, uv.left, matrix, t, [[-90, 1, 0, 0]]);
     }
 
-    static drawFace(col, uv, m, rotations) {
+    static drawFace(col, uv, m, texture, rotations) {
 
         m = new Matrix4(m);
 
@@ -220,8 +240,8 @@ class Cube extends Shape {
         gl.uniformMatrix4fv(u_ModelMatrix, false, m.elements);
 
         // Default is top
-        Triangle3D.draw([0,1,1, 1,1,0, 0,1,0], col, uv ? uv.slice(0,6) : null);
-        Triangle3D.draw([0,1,1, 1,1,1, 1,1,0], col, uv ? uv.slice(6,12) : null);
+        Triangle3D.draw([0,1,1, 1,1,0, 0,1,0], col, texture, uv ? uv.slice(0,6) : null);
+        Triangle3D.draw([0,1,1, 1,1,1, 1,1,0], col, texture, uv ? uv.slice(6,12) : null);
 
     }
 }
@@ -230,8 +250,8 @@ class Plane extends Shape {
     subRender() {
         let rgba = this.color;
         const col4 = Shape.multColor(rgba, 0.55);
-        Triangle3D.draw([0,0.5,1, 1,0.5,0, 0,0.5,0], col4, this.uvCoords.top ? this.uvCoords.top.slice(0,6) : null);
-        Triangle3D.draw([0,0.5,1, 1,0.5,1, 1,0.5,0], col4, this.uvCoords.top ? this.uvCoords.top.slice(6,12) : null);
+        Triangle3D.draw([0,0.5,1, 1,0.5,0, 0,0.5,0], col4, this.getTexture(), this.uvCoords.top ? this.uvCoords.top.slice(0,6) : null);
+        Triangle3D.draw([0,0.5,1, 1,0.5,1, 1,0.5,0], col4, this.getTexture(), this.uvCoords.top ? this.uvCoords.top.slice(6,12) : null);
     }
 }
 
@@ -274,7 +294,7 @@ class Triangle3D {
         Triangle3D.draw(this.corners, this.color);
     }
 
-    static draw(corners, color, uvCoords = null) {
+    static draw(corners, color, texture = null, uvCoords = null) {
 
         if (!Triangle3D.initBuffer()) return;
 
@@ -286,18 +306,16 @@ class Triangle3D {
 
             color = [1, 1, 1, 1];
 
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.uniform1i(u_Sampler, 0);
+            // gl.activeTexture(gl.TEXTURE0);
+            // gl.bindTexture(gl.TEXTURE_2D, texture);
+            // gl.uniform1i(u_Sampler1, 0);
 
-            // Bind and set UV data
             gl.bindBuffer(gl.ARRAY_BUFFER, Triangle3D.uvBuffer);
             gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(uvCoords), gl.DYNAMIC_DRAW);
             gl.vertexAttribPointer(a_UV, 2, gl.FLOAT, false, 0, 0);
             gl.enableVertexAttribArray(a_UV);
 
-            // Tell shader to use texture
-            gl.uniform1i(u_UseTexture, 1);
+            gl.uniform1i(u_UseTexture, textures[texture].id);
         } else {
             gl.uniform1i(u_UseTexture, 0);
         }

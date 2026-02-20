@@ -21,23 +21,27 @@ void main() {
 let FSHADER_SOURCE =`
 precision mediump float;
 uniform vec4 u_FragColor;
-uniform sampler2D u_Sampler;
+uniform sampler2D u_Sampler0;
+uniform sampler2D u_Sampler1;
 uniform int u_UseTexture;
-uniform int u_EnableColors;
 varying vec2 v_UV;
 void main() {
     vec4 color;
-    if (u_UseTexture == 1 && u_EnableColors == 0) {
-        vec4 UVColor = texture2D(u_Sampler, v_UV);
-        color = UVColor * u_FragColor;
-        if (color.a < 0.1) {
-            discard;
-        }
-    } else {
-        color = u_FragColor;
+    // color = vec4(1.0, 0.0, 0.0, 1.0);
+    vec4 UVColor = vec4(1.0, 1.0, 1.0, 1.0);
+    if (u_UseTexture == 0) {
+        UVColor = texture2D(u_Sampler0, v_UV);
+        color = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+    if (u_UseTexture == 1) {
+        UVColor = texture2D(u_Sampler1, v_UV);
+        color = vec4(1.0, 0.0, 0.0, 1.0);
+    }
+    color = UVColor * u_FragColor;
+    if (color.a < 0.1) {
+        discard;
     }
     gl_FragColor = color;
-    gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
 `;
 
@@ -77,20 +81,24 @@ function getUniformLocation(program, name) {
 }
 
 let texture;
-let image;
+let textures = {};
 
 let canvas;
 let gl;
 let a_Position;
 let a_UV;
 let u_FragColor;
-let u_Sampler;
-let u_EnableColors;
+let u_Sampler0;
+let u_Sampler1;
 let u_ModelMatrix;
 let u_GlobalRotateMatrix;
 let u_ViewMatrix;
 let u_ProjectionMatrix;
 let u_UseTexture;
+
+const samplerGLInfo = [];
+
+let imagesToLoad = 0;
 
 function connectVariablesToGLSL() {
     // Initialize shaders
@@ -107,42 +115,19 @@ function connectVariablesToGLSL() {
     u_GlobalRotateMatrix = getUniformLocation(gl.program, 'u_GlobalRotateMatrix');
     u_ViewMatrix = getUniformLocation(gl.program, 'u_ViewMatrix');
     u_ProjectionMatrix = getUniformLocation(gl.program, 'u_ProjectionMatrix');
-    u_Sampler = getUniformLocation(gl.program, 'u_Sampler');
+    u_Sampler0 = getUniformLocation(gl.program, 'u_Sampler0');
+    u_Sampler1 = getUniformLocation(gl.program, 'u_Sampler1');
     u_UseTexture = getUniformLocation(gl.program, 'u_UseTexture');
-    u_EnableColors = getUniformLocation(gl.program, 'u_EnableColors');
-
-    gl.uniform1i(u_EnableColors, 0);
 
     let identityM = new Matrix4();
     gl.uniformMatrix4fv(u_ModelMatrix, false, identityM.elements);
     gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, identityM.elements);
 
-    texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-
-    image = new Image();
-
-    image.onload = () => {
-        // Flip the image's y-axis
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-
-        // Set texture parameters
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-
-        // Upload the image into the texture
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
-    };
-
-    image.src = './dragon.png';
-
     return !!(a_Position >= 0 &&
         a_UV >= 0 &&
         u_FragColor &&
-        u_Sampler &&
-        u_EnableColors &&
+        u_Sampler0 &&
+        u_Sampler1 &&
         u_ModelMatrix &&
         u_GlobalRotateMatrix &&
         u_ViewMatrix &&
@@ -200,6 +185,21 @@ function main() {
         return false;
     }
 
+    samplerGLInfo.push(
+        {
+            texture: gl.TEXTURE0,
+            sampler: u_Sampler0,
+        }
+    )
+    samplerGLInfo.push(
+        {
+            texture: gl.TEXTURE1,
+            sampler: u_Sampler1,
+        },
+    )
+
+    loadTextures();
+
     setUpElements();
 
     // Register function (event handler) to be called on a mouse press
@@ -211,13 +211,58 @@ function main() {
 
     gl.clearColor(26/255, 0, 36/255, 1);
 
-    buildModel();
-    createParticles()
+    gl.uniform1i(u_UseTexture, 0);
+
+    // buildModel();
+    createParticles();
 
     tick();
     updateFPS();
 
     return true;
+}
+
+function loadTextures() {
+    function doTextureThing(image, ID) {
+
+        const info = samplerGLInfo[ID];
+
+        let texture = gl.createTexture();
+        
+        gl.activeTexture(info.texture);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, image);
+
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.uniform1i(info.sampler, ID);
+
+        return texture;
+    }
+
+    function loadImage(name, path, ID) {
+        imagesToLoad += 1;
+        const image = new Image();
+        image.onload = () => {
+            textures[name] = {
+                id: ID,
+                texture: doTextureThing(image, ID),
+                image: image,
+            }
+            imagesToLoad -= 1;
+        };
+        image.src = path;
+    }
+
+    loadImage('dragon', './dragon.png', 0);
+    loadImage('debug', './debug.png', 1);
 }
 
 function clearScreen() {
@@ -249,11 +294,6 @@ function renderScene() {
 
     const lookAt = new Vector3(player.facing.elements);
     lookAt.add(player.pos);
-
-    // console.log("-");
-    // // console.log(player.pos.elements)
-    // console.log(lookAt.elements);
-    // console.log(player.facing.elements);
 
     const viewMat = new Matrix4();
     // x, y, z,  x+cx, y+cy, z+cz
@@ -330,6 +370,7 @@ function drawParticles() {
         particle[2] = mapSpace(particle[2], particleZBounds);
 
         const part = new Plane(particle[0] + particleXBounds * (3/4), particle[1], particle[2] - particleZBounds * (1/4), 5, 5, 5).col(255, 0, 0, 255);
+        part.setTexture('dragon');
         part.faceCamera = true;
         part.buildMatrix();
         part.applyTexture("all", [0, 0, 5, 5], particle[3]);
@@ -340,11 +381,10 @@ function drawParticles() {
 function buildModel() {
     parts = {};
 
-
-
     // Dragon
     {
         let body = new Cube(0, 0, 0, 0, 0, 0, 1000, 0, 0, "Math.sin(g_seconds*g_speed - 1.9) * 0.2", 0, 1, 0);
+        body.setTexture('dragon');
         parts.body = body;
         let bodyAnim = [];
         if (funTimer !== -1) {
@@ -499,18 +539,18 @@ function buildModel() {
     }
 
 
-    // Ground plane
-    {
-        let bodyAnim = [];
-        if (funTimer !== -1) {
-            const megaAnim = `
-            diveAmount*90;
-        `;
-            bodyAnim = [0, 0, 0, megaAnim, 0, 1, 0];
-        }
-        let body = new Plane(0, 0, -80, 1000, 1000, 1, ...bodyAnim);
-        parts.floor = body;
-    }
+    // // Ground plane
+    // {
+    //     let bodyAnim = [];
+    //     if (funTimer !== -1) {
+    //         const megaAnim = `
+    //         diveAmount*90;
+    //     `;
+    //         bodyAnim = [0, 0, 0, megaAnim, 0, 1, 0];
+    //     }
+    //     let body = new Plane(0, 0, -80, 1000, 1000, 1, ...bodyAnim);
+    //     parts.floor = body;
+    // }
 }
 
 function updateAnimationAngles() {
@@ -542,6 +582,10 @@ function updateAnimationAngles() {
 
 function tick() {
     requestAnimationFrame(tick);
+
+    if (imagesToLoad !== 0) {
+        return;
+    }
 
     handleMovement();
 
@@ -669,7 +713,6 @@ function move(event) {
     player.rot.yaw += dragX;
     player.rot.pitch += dragY;
 
-    // console.log(player.facing);
 
     player.facing.x = Math.cos(player.rot.pitch/180*Math.PI) * Math.sin(player.rot.yaw/180*Math.PI);
     player.facing.y = Math.sin(player.rot.pitch/180*Math.PI);
