@@ -539,18 +539,20 @@ function buildModel() {
     }
 
 
-    // // Ground plane
-    // {
-    //     let bodyAnim = [];
-    //     if (funTimer !== -1) {
-    //         const megaAnim = `
-    //         diveAmount*90;
-    //     `;
-    //         bodyAnim = [0, 0, 0, megaAnim, 0, 1, 0];
-    //     }
-    //     let body = new Plane(0, 0, -80, 1000, 1000, 1, ...bodyAnim);
-    //     parts.floor = body;
-    // }
+    // Ground plane
+    {
+        let bodyAnim = [];
+        if (funTimer !== -1) {
+            const megaAnim = `
+            diveAmount*90;
+        `;
+            bodyAnim = [0, 0, 0, megaAnim, 0, 1, 0];
+        }
+        let body = new Plane(0, 0, -80, 1000, 1000, 1, ...bodyAnim);
+        body.setTexture('debug');
+        body.applyTexture(["top"], [0, 0, 1023, 1023]);
+        parts.floor = body;
+    }
 }
 
 function updateAnimationAngles() {
@@ -712,6 +714,12 @@ function move(event) {
 
     player.rot.yaw += dragX;
     player.rot.pitch += dragY;
+    if (player.rot.pitch < -89) {
+        player.rot.pitch = -89;
+    }
+    if (player.rot.pitch > 89) {
+        player.rot.pitch = 89;
+    }
 
 
     player.facing.x = Math.cos(player.rot.pitch/180*Math.PI) * Math.sin(player.rot.yaw/180*Math.PI);
