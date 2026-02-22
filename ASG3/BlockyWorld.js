@@ -211,8 +211,6 @@ function main() {
 
     gl.clearColor(26/255, 0, 36/255, 1);
 
-    gl.uniform1i(u_UseTexture, 0);
-
     // buildModel();
     createParticles();
 
@@ -542,16 +540,22 @@ function buildModel() {
     // Ground plane
     {
         let bodyAnim = [];
-        if (funTimer !== -1) {
-            const megaAnim = `
-            diveAmount*90;
-        `;
-            bodyAnim = [0, 0, 0, megaAnim, 0, 1, 0];
-        }
         let body = new Plane(0, 0, -80, 1000, 1000, 1, ...bodyAnim);
         body.setTexture('debug');
         body.applyTexture(["top"], [0, 0, 1023, 1023]);
         parts.floor = body;
+        body.add(new Cube(300, 0, 0, 100, 1000, 200)).color = [0.3, 0, 0, 1];
+        body.add(new Cube(0, 300, 0, 1000, 100, 200)).color = [0, 0.5, 0, 1];
+    }
+
+    // Skybox
+    {
+        let bodyAnim = [];
+        let body = new Cube(0, 0, 0, 10000, 10000, 10000, ...bodyAnim);
+        body.color = [0.0, 0.2, 0.8, 1];
+        // body.setTexture('debug');
+        // body.applyTexture(["all"], [0, 0, 1023, 1023]);
+        parts.skybox = body;
     }
 }
 
@@ -599,6 +603,19 @@ function tick() {
 }
 
 function handleMovement() {
+    const keySense = 2;
+    if (isKeyDown("RotateLeft")) {
+        player.rot.yaw += keySense;
+    }
+    if (isKeyDown("RotateRight")) {
+        player.rot.yaw -= keySense;
+    }
+
+    player.facing.x = Math.cos(player.rot.pitch/180*Math.PI) * Math.sin(player.rot.yaw/180*Math.PI);
+    player.facing.y = Math.sin(player.rot.pitch/180*Math.PI);
+    player.facing.z = Math.cos(player.rot.pitch/180*Math.PI) * Math.cos(player.rot.yaw/180*Math.PI);
+
+
     let keys = {
         Forward: new Vector3([0, 0, 1]),
         Backward: new Vector3([0, 0, -1]),
@@ -685,7 +702,6 @@ let diveAmount = 0;
 let diveTime = 2;
 let stillTime = 3;
 
-
 function funAnimation() {
     funTimer = 0;
     funTimerStart = performance.now()/1000.0;
@@ -752,6 +768,8 @@ const keyLists = {
     "Backward": ["ArrowDown", "KeyS"],
     "Left": ["ArrowLeft", "KeyA"],
     "Right": ["ArrowRight", "KeyD"],
+    "RotateLeft": ["KeyQ"],
+    "RotateRight": ["KeyE"],
 }
 const allowedKeys = [];
 for (let value of Object.values(keyLists)) {
@@ -777,10 +795,13 @@ function getPressedKeys() {
 }
 
 function isKeyDown(name) {
+
     if (!Object.keys(keyLists).includes(name)) {
         console.error("Key '" + name + "' does not exist.");
         return false;
     }
+
+    
 
     const actionKeys = keyLists[name];
     for (let actionKey of actionKeys) {

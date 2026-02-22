@@ -36,3 +36,7 @@ input[type="range"] {
 .sidebar {
     padding: 20px;
 }
+
+.hide {
+    display: none;
+}

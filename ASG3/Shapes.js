@@ -34,6 +34,7 @@ class Shape {
         }
 
         if (this.parent === null) {
+            return null;
             console.error('Furthest parent had no texture!');
         }
 
@@ -302,7 +303,7 @@ class Triangle3D {
         const m = 1;
         // uvCoords = [0, 0, 0, m, m, m];
 
-        if (uvCoords !== null) {
+        if (texture !== null && uvCoords !== null) {
 
             color = [1, 1, 1, 1];
 
@@ -317,7 +318,7 @@ class Triangle3D {
 
             gl.uniform1i(u_UseTexture, textures[texture].id);
         } else {
-            gl.uniform1i(u_UseTexture, 0);
+            gl.uniform1i(u_UseTexture, -1);
         }
 
         corners = corners.map(x => x - 0.5);
