@@ -1,0 +1,42 @@
+@font-face {
+    font-family: "mc";
+    src: url("./Minecraft.otf") format("opentype");
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "mc";
+    src: url("./Minecraft-Bold.otf") format("opentype");
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+* {
+    font-family: "mc", Arial, Helvetica, sans-serif
+}
+
+body {
+    display: flex;
+    margin: 0;
+    flex-wrap: wrap;
+}
+
+canvas {
+    height: 100vmin;
+    aspect-ratio: 1;
+}
+
+input[type="range"] {
+    transform: translateY(4px);
+}
+
+.sidebar {
+    padding: 20px;
+}
+
+.hide {
+    display: none;
+}
