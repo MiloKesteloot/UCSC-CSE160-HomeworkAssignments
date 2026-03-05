@@ -212,6 +212,7 @@ class Sphere extends Shape {
 
     static drawSphere(matrix, rgba, texture, uv) {
         gl.uniformMatrix4fv(u_ModelMatrix, false, matrix.elements);
+        gl.uniformMatrix4fv(u_NormalMatrix, false, new Matrix4().elements);
 
         const d = Math.PI/25;
         const dd = Math.PI/25;
@@ -225,6 +226,10 @@ class Sphere extends Shape {
                 const p2 = [sin(t+dd) * cos(r), sin(t+dd)*sin(r), cos(t+dd)];
                 const p3 = [sin(t) * cos(r+dd), sin(t)*sin(r+dd), cos(t)];
                 const p4 = [sin(t+dd) * cos(r+dd), sin(t+dd) * sin(r+dd), cos(t+dd)];
+                // const p1 = [sin(t) * cos(r), cos(t), sin(t)*sin(r)];
+                // const p2 = [sin(t+dd) * cos(r), cos(t+dd), sin(t+dd)*sin(r)];
+                // const p3 = [sin(t) * cos(r+dd), cos(t), sin(t)*sin(r+dd)];
+                // const p4 = [sin(t+dd) * cos(r+dd), cos(t+dd), sin(t+dd) * sin(r+dd)];
 
                 let v = [];
                 let uv = [];
@@ -233,7 +238,7 @@ class Sphere extends Shape {
                 v = v.concat(p4); uv = uv.concat([0, 0]);
 
                 Triangle3D.draw(
-                    v, rgba, texture, uv, v
+                    v, rgba, texture, uv, flipEveryXY(v)
                 );
 
                 v = [];
@@ -243,7 +248,7 @@ class Sphere extends Shape {
                 v = v.concat(p3); uv = uv.concat([0, 0]);
 
                 Triangle3D.draw(
-                    v, rgba, texture, uv, v
+                    v, rgba, texture, uv, flipEveryXY(v)
                 );
             }
         }
@@ -254,6 +259,21 @@ class Sphere extends Shape {
         //     [0,1,0, 0,1,0, 0,1,0]
         // );
     }
+}
+
+function flipEveryXY(vn) {
+    const v = [];
+    for (let i = 0; i < vn.length; i++) {
+        v.push(vn[i]);
+    }
+    for (let i = 0; i < v.length/3; i++) {
+        const o = i*3;
+        const s1 = v[o];
+        const s2 = v[o+2];
+        v[o] = s2;
+        v[o+2] = s1;
+    }
+    return v;
 }
 
 class Cube extends Shape {

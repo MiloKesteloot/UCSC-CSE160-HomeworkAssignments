@@ -64,15 +64,15 @@ void main() {
     vec3 toCamera = u_CameraPos - vec3(v_Position);
     float cr = length(toCamera);
 
-    if (cr < 2.0) {
-        gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
-        return;
-    }
+    // if (cr < 2.0) {
+    //     gl_FragColor = vec4(1.0, 1.0, 0.0, 1.0);
+    //     return;
+    // }
 
     vec3 toLight = vec3(
-    u_LightPos.z,
+    u_LightPos.x,
     u_LightPos.y,
-    u_LightPos.x
+    u_LightPos.z
     ) - vec3(v_Position);
     float r = length(toLight);
 
@@ -93,6 +93,9 @@ void main() {
     vec3 ambient = vec3(gl_FragColor) * 0.3;
 
     gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
+
+    // gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0);
+    // gl_FragColor = vec4(v_Normal, 1.0);
 }
 `;
 
