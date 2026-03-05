@@ -42,6 +42,9 @@ varying vec4 v_Position;
 uniform bool u_LightOn;
 uniform bool u_NormalsOn;
 
+uniform vec3 u_SpotPos;
+uniform vec3 u_SpotDir;
+
 void main() {
     vec4 color;
     // color = vec4(1.0, 0.0, 0.0, 1.0);
@@ -96,6 +99,14 @@ void main() {
 
     if (u_LightOn) {
         gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
+
+        vec3 toSpot = normalize(vec3(v_Position) - u_SpotPos);
+        float spotAngle = dot(toSpot, normalize(u_SpotDir));
+        if (spotAngle > 0.9) {
+            float spotNDotL = max(dot(N, -toSpot), 0.0);
+            vec3 spotDiffuse = vec3(color) * spotNDotL;
+            gl_FragColor.rgb += spotDiffuse;
+        }
     }
 
     if (u_NormalsOn) {
@@ -157,6 +168,8 @@ let u_ViewMatrix;
 let u_ProjectionMatrix;
 let u_UseTexture;
 let u_LightPos;
+let u_SpotPos;
+let u_SpotDir;
 let u_CameraPos;
 let u_NormalMatrix;
 let u_LightOn;
@@ -186,6 +199,8 @@ function connectVariablesToGLSL() {
     u_Sampler1 = getUniformLocation(gl.program, 'u_Sampler1');
     u_UseTexture = getUniformLocation(gl.program, 'u_UseTexture');
     u_LightPos = getUniformLocation(gl.program, 'u_LightPos');
+    u_SpotPos = getUniformLocation(gl.program, 'u_SpotPos');
+    u_SpotDir = getUniformLocation(gl.program, 'u_SpotDir');
     u_CameraPos = getUniformLocation(gl.program, 'u_CameraPos');
     u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
     u_LightOn = getUniformLocation(gl.program, 'u_LightOn');
@@ -207,6 +222,8 @@ function connectVariablesToGLSL() {
         u_ProjectionMatrix &&
         u_UseTexture &&
         u_LightPos &&
+        u_SpotPos &&
+        u_SpotDir &&
         u_CameraPos &&
         u_LightOn &&
         u_NormalsOn);
@@ -302,6 +319,9 @@ function main() {
 
     gl.uniform1i(u_LightOn, true);
     gl.uniform1i(u_NormalsOn, false);
+    const scale = 1/160 * g_globalScale;
+    gl.uniform3f(u_SpotPos, -600 * scale + lightXOffset, 0 * scale, -200 * scale);
+    gl.uniform3f(u_SpotDir, 1, 0, 1);
 
     tick();
     updateFPS();
