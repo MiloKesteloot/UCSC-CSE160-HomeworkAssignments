@@ -680,9 +680,18 @@ function buildModel() {
         parts.cube = body;
     }
 
+    // Model
+    {
+        let body = new Model('teapot.obj', -200, 0, 0, 50, 50, 50);
+        body.color = [0.0, 0.2, 0.8, 1];
+        // body.setTexture('debug');
+        // body.applyTexture(["all"], [0, 0, 1023, 1023]);
+        parts.model = body;
+    }
+
     // Sphere
     {
-        let sphere = new Sphere(100, 0, 0, 50, 50, 50);
+        let sphere = new Sphere(200, 0, 0, 50, 50, 50);
         sphere.color = [1, 0.2, 1, 1];
         parts.sphere = sphere;
     }

@@ -350,6 +350,110 @@ class Particle extends Plane {
     }
 }
 
+let savedModels = {};
+
+class Model extends Shape {
+    constructor(filePath, x, z, y, sx, sz, sy, px, pz, py, r, ax, az, ay) {
+        super(x, z, y, sx, sz, sy, px, pz, py, r, ax, az, ay);
+        this.type = 'model';
+        this.isFullyLoaded = false;
+        this.modelData = null;
+
+        this.vertexBuffer = gl.createBuffer();
+        this.normalBuffer = gl.createBuffer();
+
+        if (savedModels[filePath] === undefined) {
+            this._loadModel(filePath);
+        } else {
+            this.isFullyLoaded = true;
+            this.modelData = savedModels[filePath];
+            // _parseModel(filePath, fileContent)
+        }
+    }
+
+    async _loadModel(filePath) {
+        try {
+            const response = await fetch(filePath);
+            if (!response.ok) throw new Error(`Could not load "${filePath}"`);
+            this._parseModel(filePath, await response.text());
+        } catch (e) {
+            console.error('ModelShape: Failed to load model.', e);
+        }
+    }
+
+    _parseModel(filePath, fileContent) {
+        const lines = fileContent.split('\n');
+        const allVertices = [];
+        const allNormals = [];
+        const unpackedVerts = [];
+        const unpackedNormals = [];
+
+        for (const line of lines) {
+            const tokens = line.trim().split(/\s+/);
+            switch (tokens[0]) {
+                case 'v':
+                    allVertices.push(
+                        parseFloat(tokens[1]),
+                        parseFloat(tokens[2]),
+                        parseFloat(tokens[3])
+                    );
+                    break;
+                case 'vn':
+                    allNormals.push(
+                        parseFloat(tokens[1]),
+                        parseFloat(tokens[2]),
+                        parseFloat(tokens[3])
+                    );
+                    break;
+                case 'f':
+                    for (const face of [tokens[1], tokens[2], tokens[3]]) {
+                        const indices = face.split('//');
+                        const vi = (parseInt(indices[0]) - 1) * 3;
+                        const ni = (parseInt(indices[1]) - 1) * 3;
+                        unpackedVerts.push(
+                            allVertices[vi], allVertices[vi+1], allVertices[vi+2]
+                        );
+                        unpackedNormals.push(
+                            allNormals[ni], allNormals[ni+1], allNormals[ni+2]
+                        );
+                    }
+                    break;
+            }
+        }
+
+        savedModels[filePath] = {
+            vertices: new Float32Array(unpackedVerts),
+            normals:  new Float32Array(unpackedNormals),
+        };
+        this.isFullyLoaded = true;
+    }
+
+    subRender(worldMatrix) {
+        if (!this.isFullyLoaded) return;
+
+        gl.uniformMatrix4fv(u_ModelMatrix, false, worldMatrix.elements);
+
+        const normalMatrix = new Matrix4().setInverseOf(worldMatrix);
+        normalMatrix.transpose();
+        gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+
+        gl.uniform1i(u_UseTexture, -1);
+        gl.uniform4f(u_FragColor, ...this.color);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, this.modelData.vertices, gl.DYNAMIC_DRAW);
+        gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(a_Position);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, this.modelData.normals, gl.DYNAMIC_DRAW);
+        gl.vertexAttribPointer(a_Normal, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(a_Normal);
+
+        gl.drawArrays(gl.TRIANGLES, 0, this.modelData.vertices.length / 3);
+    }
+}
+
 class Triangle3D {
     constructor(corners, rgb = [1, 0.5, 0.5, 1]) {
         this.type = "triangle";
