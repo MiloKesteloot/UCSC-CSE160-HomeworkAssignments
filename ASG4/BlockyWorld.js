@@ -39,6 +39,7 @@ varying vec2 v_UV;
 varying vec3 v_Normal;
 uniform vec3 u_CameraPos;
 varying vec4 v_Position;
+uniform bool u_LightOn;
 
 void main() {
     vec4 color;
@@ -92,7 +93,9 @@ void main() {
     vec3 diffuse = vec3(gl_FragColor) * nDotL;
     vec3 ambient = vec3(gl_FragColor) * 0.3;
 
-    gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
+    if (u_LightOn) {
+        gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
+    }
 
     // gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0);
     // gl_FragColor = vec4(v_Normal, 1.0);
@@ -153,6 +156,7 @@ let u_UseTexture;
 let u_LightPos;
 let u_CameraPos;
 let u_NormalMatrix;
+let u_LightOn;
 
 const samplerGLInfo = [];
 
@@ -180,6 +184,7 @@ function connectVariablesToGLSL() {
     u_LightPos = getUniformLocation(gl.program, 'u_LightPos');
     u_CameraPos = getUniformLocation(gl.program, 'u_CameraPos');
     u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
+    u_LightOn = getUniformLocation(gl.program, 'u_LightOn');
 
     let identityM = new Matrix4();
     gl.uniformMatrix4fv(u_ModelMatrix, false, identityM.elements);
@@ -197,12 +202,15 @@ function connectVariablesToGLSL() {
         u_ProjectionMatrix &&
         u_UseTexture &&
         u_LightPos &&
-        u_CameraPos);
+        u_CameraPos &&
+        u_LightOn);
 }
 
 let fpsElement;
 let pauseButton;
 let paused = false;
+
+let toggleLightButton;
 
 function setUpElements() {
     fpsElement = document.getElementById("fps");
@@ -228,6 +236,7 @@ function setUpElements() {
     document.getElementById('lightX').addEventListener('input', function() {light.pos.x = this.value;})
     document.getElementById('lightY').addEventListener('input', function() {light.pos.y = this.value;})
     document.getElementById('lightZ').addEventListener('input', function() {light.pos.z = this.value;})
+    toggleLightButton = document.getElementById('toggleLight');
 }
 
 function pauseButtonClicked() {
@@ -283,10 +292,23 @@ function main() {
     // buildModel();
     createParticles();
 
+    gl.uniform1i(u_LightOn, true);
+
     tick();
     updateFPS();
 
     return true;
+}
+
+function toggleLight() {
+    if (toggleLightButton.value === 'Light Off') {
+        toggleLightButton.value = 'Light On';
+        gl.uniform1i(u_LightOn, false);
+    } else {
+        toggleLightButton.value = 'Light Off';
+        gl.uniform1i(u_LightOn, true);
+    }
+    
 }
 
 function loadTextures() {
