@@ -40,6 +40,7 @@ varying vec3 v_Normal;
 uniform vec3 u_CameraPos;
 varying vec4 v_Position;
 uniform bool u_LightOn;
+uniform bool u_NormalsOn;
 
 void main() {
     vec4 color;
@@ -97,7 +98,9 @@ void main() {
         gl_FragColor = vec4(diffuse + ambient + specular, 1.0);
     }
 
-    // gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0);
+    if (u_NormalsOn) {
+        gl_FragColor = vec4((v_Normal + 1.0) / 2.0, 1.0);
+    }
     // gl_FragColor = vec4(v_Normal, 1.0);
 }
 `;
@@ -157,6 +160,7 @@ let u_LightPos;
 let u_CameraPos;
 let u_NormalMatrix;
 let u_LightOn;
+let u_NormalsOn;
 
 const samplerGLInfo = [];
 
@@ -185,6 +189,7 @@ function connectVariablesToGLSL() {
     u_CameraPos = getUniformLocation(gl.program, 'u_CameraPos');
     u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
     u_LightOn = getUniformLocation(gl.program, 'u_LightOn');
+    u_NormalsOn = getUniformLocation(gl.program, 'u_NormalsOn');
 
     let identityM = new Matrix4();
     gl.uniformMatrix4fv(u_ModelMatrix, false, identityM.elements);
@@ -203,7 +208,8 @@ function connectVariablesToGLSL() {
         u_UseTexture &&
         u_LightPos &&
         u_CameraPos &&
-        u_LightOn);
+        u_LightOn &&
+        u_NormalsOn);
 }
 
 let fpsElement;
@@ -211,6 +217,7 @@ let pauseButton;
 let paused = false;
 
 let toggleLightButton;
+let toggleNormalsButton;
 
 function setUpElements() {
     fpsElement = document.getElementById("fps");
@@ -237,6 +244,7 @@ function setUpElements() {
     document.getElementById('lightY').addEventListener('input', function() {light.pos.y = this.value;})
     document.getElementById('lightZ').addEventListener('input', function() {light.pos.z = this.value;})
     toggleLightButton = document.getElementById('toggleLight');
+    toggleNormalsButton = document.getElementById('toggleNormals');
 }
 
 function pauseButtonClicked() {
@@ -293,6 +301,7 @@ function main() {
     createParticles();
 
     gl.uniform1i(u_LightOn, true);
+    gl.uniform1i(u_NormalsOn, false);
 
     tick();
     updateFPS();
@@ -308,7 +317,16 @@ function toggleLight() {
         toggleLightButton.value = 'Light Off';
         gl.uniform1i(u_LightOn, true);
     }
-    
+}
+
+function toggleNormals() {
+    if (toggleNormalsButton.value === 'Normals Off') {
+        toggleNormalsButton.value = 'Normals On';
+        gl.uniform1i(u_NormalsOn, false);
+    } else {
+        toggleNormalsButton.value = 'Normals Off';
+        gl.uniform1i(u_NormalsOn, true);
+    }
 }
 
 function loadTextures() {
@@ -682,7 +700,7 @@ let lightXOffset = 0;
 function updateAnimationAngles() {
     g_seconds = performance.now()/1000.0-g_startTime;
 
-    // lightXOffset = Math.sin(g_seconds) * 2;
+    lightXOffset = Math.sin(g_seconds) * 2;
 
     if (funTimer !== -1) {
         const oldFunTimer = funTimer;
