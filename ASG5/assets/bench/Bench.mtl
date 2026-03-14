@@ -1,0 +1,7 @@
+newmtl set1
+illum 4
+Kd 1.00 1.00 1.00
+map_Kd bench_basecolor.png
+Ka 0.00 0.00 0.00
+map_Ka bench_ao.png
+map_Bump bench_normal.png
